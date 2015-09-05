@@ -1,0 +1,155 @@
+INSTRUCTIVO GXEmul + NetBSD
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Septiembre 2006
+
+
+
+1. NOMENCLATURA
+
+En este documento, se hará referencia al "prompt" del sistema operativo
+"host", de la siguiente manera:
+
+  host#
+
+Mientras que, para el "prompt" del sistema operativo "guest" (NetBSD):
+
+  guest#
+
+
+2. INSTALACIÓN
+
+Para instalar el emulador GXemul, junto con el sistema operativo NetBSD,
+deberá bajarse el archivo:
+
+  http://webs.sinectis.com.ar/lesanti/6620/gxemul-6620.tar.bz2
+
+Para descomprimir dicho archivo, utilizar el siguiente comando:
+
+  host# bzip2 -dc gxemul-6620.tar.bz2 | cpio --sparse -i -v
+
+El comando 'cpio' recibe, a través del "pipe", el resultado de la
+descompresión, y lo escribe en el sistema de archivos, evitando que queden
+"agujeros". Esto permite que la imagen del NetBSD ocupe alrededor de 370 MB
+(en lugar de los 2 GB, si no se usara la opción "--sparse").
+
+En algunas distribuciones Linux, el comando 'cpio' no soporta la opción
+"--sparse", con lo cual, la imagen del NetBSD ocuparía 2 GB. Si, de todas
+formas, desea utilizarse la opción "--sparse", puede bajarse una versión
+compilada en forma estática de la herramienta 'cpio', desde:
+
+  http://webs.sinectis.com.ar/lesanti/6620/cpio
+
+En este caso, la descompresión deberá hacerse de la siguiente manera:
+
+  host# bzip2 -dc gxemul-6620.tar.bz2 | ./cpio --sparse -i -v
+
+(asumiendo que el archivo cpio que se acaba de bajar, fue copiado en el
+mismo directorio donde se encuentra el archivo .bz2).
+
+
+Una vez que se llevaron a cabo los pasos anteriores, resta ejecutar la
+máquina virtual y el sistema operativo NetBSD, con el siguiente comando:
+
+  host# ./gxemul -e 3max -d netbsd-pmax.img
+
+Para ingresar al sistema operativo NetBSD (dentro de la máquina virtual
+GXEmul), utilizar usuario "root" y contraseña "orga6620".
+
+
+3. CONEXIONES EXTERNAS
+
+Para levantar el acceso SSH (altamente recomendable, ya que la consola
+de sistema operativo "guest" y la consola del emulador GXEmul comparten
+la misma terminal):
+
+  guest# ssh -R 2222:127.0.0.1:22 USER@HOST_ADDRESS
+
+"USER" es el nombre de usuario que se está utilizando en el sistema
+operativo "host", y "HOST_ADDRESS" del sistema operativo "host".
+A continuación, solicitará la contraseña del usuario USER en el "host".
+Si todo anduvo bien, estaremos logueados en el "host" Linux.
+
+Luego, desde el "host" podrán abrirse otras terminales en forma usual,
+y loguearse al "guest" NetBSD por SSH:
+
+  host# ssh -p 2222 root@127.0.0.1
+  Password: <- orga6620
+  ...
+  Welcome to NetBSD!
+
+
+4. COPIADO DE ARCHIVOS
+
+Independientemente de si se utiliza una consola externa (a través de SSH)
+o se trabaja directamente en la consola de NetBSD (sobre la terminal de
+GXEmul), será necesario "sacar" los archivos que se generen en el sistema
+operativo "guest" (NetBSD) y llevarlos al sistema operativo "host" (Linux).
+
+Para ello, puede usarse la herramienta SCP (Secure CoPy), la cual permite
+copiar archivos entre máquinas remotas en forma segura. A continuación se
+brindan algunos ejemplos al respecto.
+
+Parados en el sistema operativo "host" (Linux), para copiar el archivo
+prueba.s desde la carpeta /root/66.20/tp0/ (en el "guest") a la carpeta
+en donde estamos parados (en el "host"), deberá ejecutarse:
+
+  host# scp -P 2222 root@127.0.0.1:/root/66.20/tp0/prueba.s . 
+
+Parados en el sistema operativo "guest" (NetBSD), para copiar el archivo
+prueba.s desde la carpeta donde estamos parados (en el "guest") a la carpeta
+/home/usuario/66.20/tp0/ (en el "host"), deberá ejecutarse:
+
+  guest# scp prueba.s USER@HOST_ADDRESS:/home/USER/66.20/tp0/
+
+
+En los dos ejemplos anteriores, el archivo se lleva desde el "guest" hacia
+el "host". A continuación se brindan ejemplos "a la inversa" (copiar archivos
+desde el "host" hacia el "guest").
+
+Parados en el sistema operativo "host" (Linux), para copiar el archivo
+prueba.s desde la carpeta donde estamos parados (en el "host") a la carpeta
+/root/66.20/tp0/ (en el "guest"), deberá ejecutarse:
+
+  host# scp -P 2222 ./prueba.s root@127.0.0.1:/root/66.20/tp0/
+
+Parados en el sistema operativo "guest" (NetBSD), para copiar el archivo
+prueba.s desde la carpeta /home/usuario/66.20/tp0/ (en el "host") a la
+carpeta donde estamos parados (en el "guest"), deberá ejecutarse:
+
+  guest# scp USER@HOST_ADDRESS:/home/USER/66.20/tp0/prueba.s .
+
+
+5. TROUBLESHOOTING
+
+Cuando se establece la conexión SSH desde el "host" (Linux), podría
+recibirse el siguiente mensaje de error:
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle
+attack)!
+It is also possible that the RSA host key has just been changed.
+The fingerprint for the RSA key sent by the remote host is
+77:42:a8:ac:f6:1b:54:c2:be:a4:d3:6b:91:fd:be:88.
+Please contact your system administrator.
+Add correct host key in /root/.ssh/known_hosts to get rid of this message.
+Offending key in /root/.ssh/known_hosts:2
+RSA host key for 172.20.0.1 has changed and you have requested strict
+checking.
+Host key verification failed.
+
+
+En ese caso, ya se encuntra disponible una versión "corregida" de la
+imagen del sistema operativo NetBSD en:
+
+  http://webs.sinectis.com.ar/lesanti/6620/gxemul-6620.tar.bz2
+
+Como alternativa, para no volver a bajar este archivo, es suficiente
+con borrar el archivo root/.ssh/known_hosts en el sistema operativo "guest"
+(NetBSD).
+
+
+Enjoy it! :-)

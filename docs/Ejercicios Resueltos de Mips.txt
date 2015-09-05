@@ -1,0 +1,224 @@
+A.6 [5] <§A.9> Using SPIM, write and test an adding machine program that
+repeatedly reads in integers and adds them into a running sum. The program
+should stop when it gets an input that is 0, printing out the sum at that point. Use
+the SPIM system calls described on pages A-43 and A-45.
+
+Este Código en C
+
+int main(void{
+int total;/*variable donde se guardará el valor de las sumas parciales*/
+int aux;/*auxiliar para pedir cada valor*/
+
+aux=1;
+valor=0;
+while(aux!=0){
+    scanf(aux); /*leo el valor desde teclado*/
+    total+=aux; /*sumo este valor a lo anterior en "total"*/
+}
+printf("%s%d\n","El valor total es: ",valor); /*impresión por pantalla*/
+return 0;
+}
+
+
+En Assembly Mips 32:
+
+    .text
+	.globl	main
+
+#### Programa principal 
+
+main: 
+        subu  $sp,$sp,20        #stack de 20 bytes
+	    sw    $ra,16($sp)       #guardo la dirección de retorno
+	    subu  $t0,$t0,$t0       #el registo temporal nº 0 = 0
+	    subu  $t1,$t1,$t1       #el registo temporal nº 1 = 0
+while:  la	  $a0, pnum         #el reg a0 es el parametro para al hacer syscall
+        li		$v0, 4		    # Llamada al sistema 4 -> imprimir string
+	    syscall
+		li    $v0,5             #llamada al sistema 5 -> leer un integer
+	    syscall
+	    move  $t0,$v0           #v0->t0 asi puedo trabajar tranquilo con t0
+	    addu   $t1,$t1,$t0      #t1+=t1+t0 
+	    bnez  $t0,while         #si t0!=0 salto al label "while"
+		#### Como t0=0 debo imprimir el resultado ####
+		li	  $v0,4	            #codigo del sistema 4: indica que se imprime un string
+	    la	  $a0,msge          #pasaje de argumentos, $a0 tiene la direccion de msge
+	    syscall
+		li    $v0,1             #llamada al sistema para que imprima el valor integer
+	    move  $a0,$t1           #a0=t1 para luego pasarlo por parámetro
+		syscall
+		#### Libero la memoria pedida ####
+		lw    $ra,16($sp)       #restauro la dirección de retorno
+        addiu $sp,$sp,20        #limpio el stack		
+        jr    $ra               #vuelvo al sistema operativo
+
+		.data
+pnum:		.asciiz		"Ingrese un entero (0 termina): \n"
+msge:		.asciiz		"Resultado acumulado: "
+
+/*************************************************************************************/
+A.7 [5] <§A.9> Using SPIM, write and test a program that reads in three integers
+and prints out the sum of the largest two of the three. Use the SPIM system calls
+described on pages A-43 and A-45. You can break ties arbitrarily.
+
+Este Código en C
+
+int main(void){
+   /*declaración de variables a utilizar en el programa*/
+   int primero;
+   int segundo;
+   int tercero;
+   
+   /*lectura de valores*/
+   scanf("%s%d\n","ingrese el primer valor: ",primero);
+   scanf("%s%d\n","ingrese el segundo valor: ",segundo);
+   scanf("%s%d\n","ingrese el tercer valor: ",tercero);
+ 
+   /*analisis de posibilidades*/ 
+   if(primero>=segundo){
+       /*primero>=segundo>=tercero*/
+	   if(segundo>=tercero)
+	       printf("%s%d\n","la suma de los 2 mayores valores es: ",primero+segundo);
+	   /*primero>=tercero>segundo*/
+	   else
+	       printf("%s%d\n","la suma de los 2 mayores valores es: ",primero+tercero); 
+    }
+	else if(segundo>primero){
+	      if(primero>=tercero)
+		     printf("%s%d\n","la suma de los 2 mayores valores es: ",segundo+primero);   
+          else
+		     printf("%s%d\n","la suma de los 2 mayores valores es: ",segundo+tercero);
+	}
+    else if(tercero>primero){
+         if(primero>=segundo)
+		    printf("%s%d\n","la suma de los 2 mayores valores es: ",tercero+primero); 
+         else
+            printf("%s%d\n","la suma de los 2 mayores valores es: ",tercero+segundo);   		 
+	}	
+return 0;
+}	 
+
+
+En Assembly Mips 32:
+
+main: 
+        subu   $sp,$sp,20        #stack de 20 bytes
+	    sw     $ra,16($sp)       #guardo la dirección de retorno
+	    subu   $t0,$t0,$t0       #el registo temporal nº 0 = 0
+	    subu   $t1,$t1,$t1       #el registo temporal nº 1 = 0
+		subu   $t2,$t2,$t2       #el registo temporal nº 2 = 0
+        
+		##### leo el primer valor ####
+		li	   $v0,4	            #codigo del sistema 4: indica que se imprime un string
+	    la	   $a0,ingreso       #pasaje de argumentos, $a0 tiene la direccion de "ingreso"
+	    syscall
+		li     $v0,5             #llamada al sistema 5-> leer un integer
+	    syscall
+	    move   $t0,$v0           #v0->t0 asi puedo trabajar tranquilo con t0
+        
+		#### leo el segundo valor ####
+		li	   $v0,4	            #codigo del sistema 4: indica que se imprime un string
+	    la	   $a0,ingreso       #pasaje de argumentos, $a0 tiene la direccion de "ingreso"
+	    syscall
+		li     $v0,5             #llamada al sistema 5-> leer un integer
+	    syscall
+	    move   $t1,$v0           #v0->t1 asi puedo trabajar tranquilo con t1
+		
+		#### leo el tercer valor ####
+		li	   $v0,4	            #codigo del sistema 4: indica que se imprime un string
+	    la	   $a0,ingreso       #pasaje de argumentos, $a0 tiene la direccion de "ingreso"
+	    syscall
+		li     $v0,5             #llamada al sistema 5-> leer un integer
+	    syscall
+	    move   $t2,$v0           #v0->t2 asi puedo trabajar tranquilo con t2
+        
+		#### comienzo de analisis #### 
+		
+		subu   $t3,$t0,$t1       #t3=t0-t1
+		blez   $t3,pcomp1        #salto a la proxima comparación general 
+		subu   $t3,$t1,$t2       #t3=t1-t2
+		blez   $t3,inte1         #salto a la otra impresión 
+		####  primero>=segundo>=tercero ####
+		add    $t3,$t0,$t1       #realizo la suma t3=t0+t1
+		li	   $v0,4	         #codigo del sistema 4: indica que se imprime un string
+	    la	   $a0,suma          #pasaje de argumentos, $a0 tiene la direccion de "ingreso"
+	    syscall
+		li     $v0,1             #llamada al sistema para que imprima el valor integer
+	    move   $a0,$t3           #a0=t3 para luego pasarlo por parámetro
+		syscall                 
+		j      fin               #salto al final
+        #### primero>=tercero>=segundo ####
+inte1:  add    $t3,$t0,$t2       #realizo la suma t3=t0+t2
+		li	   $v0,4	         #codigo del sistema 4: indica que se imprime un string
+	    la	   $a0,suma          #pasaje de argumentos, $a0 tiene la direccion de "ingreso"
+	    syscall
+		li     $v0,1             #llamada al sistema para que imprima el valor integer
+	    move   $a0,$t3           #a0=t3 para luego pasarlo por parámetro
+		syscall
+		j      fin		         #salto al final
+        
+		#### segundo>=primero>=tercero ####
+pcomp1:	subu   $t3,$t1,$t0       #t3=t1-t0
+		bltzal $t3,pcomp2        #salto a la proxima comparación general
+		subu   $t3,$t0,$t2       #t3=t0-t2
+		blez   $t3,inte2         #salto a la otra impresión 
+		add    $t3,$t1,$t0       #realizo la suma t3=t1+t0
+		li	   $v0,4	         #codigo del sistema 4: indica que se imprime un string
+	    la	   $a0,suma          #pasaje de argumentos, $a0 tiene la direccion de "ingreso"
+	    syscall
+		li     $v0,1             #llamada al sistema para que imprima el valor integer
+	    move   $a0,$t3           #a0=t3 para luego pasarlo por parámetro
+		syscall
+		j      fin               #salto al final
+        #### segundo>=tercero>=primero ####
+inte2:  add    $t3,$t1,$t2       #realizo la suma t3=t1+t2
+		li	   $v0,4	         #codigo del sistema 4: indica que se imprime un string
+	    la	   $a0,suma          #pasaje de argumentos, $a0 tiene la direccion de "ingreso"
+	    syscall
+		li     $v0,1             #llamada al sistema para que imprima el valor integer
+	    move   $a0,$t3           #a0=t3 para luego pasarlo por parámetro
+		syscall
+		j      fin	
+		
+		#### tercero>=primero>=segundo ####
+pcomp2:	subu   $t3,$t2,$t0       #t3=t2-t0
+		bltzal $t3,fin           #salto al final
+		subu   $t3,$t0,$t1       #t3=t0-t1
+		blez   $t3,inte2         #salto a la otra impresion 
+		add    $t3,$t2,$t0       #realizo la suma t3=t2+t0
+		li	   $v0,4	         #codigo del sistema 4: indica que se imprime un string
+	    la	   $a0,suma          #pasaje de argumentos, $a0 tiene la direccion de "ingreso"
+	    syscall
+		li     $v0,1             #llamada al sistema para que imprima el valor integer
+	    move   $a0,$t3           #a0=t3 para luego pasarlo por parámetro
+		syscall
+		j      fin               #salto al final
+        #### tercero>=segundo>=primero ####
+inte3:  add    $t3,$t2,$t1       #realizo la suma t3=t2+t1
+		li	   $v0,4	         #codigo del sistema 4: indica que se imprime un string
+	    la	   $a0,suma          #pasaje de argumentos, $a0 tiene la direccion de "ingreso"
+	    syscall
+		li     $v0,1             #llamada al sistema para que imprima el valor integer
+	    move   $a0,$t3           #a0=t3 para luego pasarlo por parámetro
+		syscall
+		j      fin	             #salto al final
+		
+		#### Libero la memoria pedida ####
+fin:	lw     $ra,16($sp)       #restauro la dirección de retorno
+        addiu  $sp,$sp,20        #limpio el stack		
+        jr     $ra               #vuelvo al sistema operativo
+		
+
+ingreso: .asciiz "ingrese el primer valor: "
+suma:    .asciiz "la suma de los 2 mayores valores es: "
+
+
+
+
+
+
+
+
+
+
+
